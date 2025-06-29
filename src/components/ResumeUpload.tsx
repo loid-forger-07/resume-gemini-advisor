@@ -3,8 +3,6 @@ import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Upload, FileText, Loader2, Sparkles } from "lucide-react";
 import { AnalysisData } from "@/pages/Index";
@@ -17,7 +15,6 @@ interface ResumeUploadProps {
 
 export const ResumeUpload = ({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }: ResumeUploadProps) => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [apiKey, setApiKey] = useState("");
   const [analysisProgress, setAnalysisProgress] = useState(0);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -39,8 +36,14 @@ export const ResumeUpload = ({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
   });
 
   const analyzeResume = async () => {
-    if (!uploadedFile || !apiKey.trim()) {
-      toast.error("Please upload a resume and enter your Gemini API key.");
+    if (!uploadedFile) {
+      toast.error("Please upload a resume first.");
+      return;
+    }
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      toast.error("Gemini API key not configured. Please check your environment variables.");
       return;
     }
 
@@ -75,7 +78,7 @@ export const ResumeUpload = ({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
       
     } catch (error) {
       console.error("Analysis error:", error);
-      toast.error("Failed to analyze resume. Please check your API key and try again.");
+      toast.error("Failed to analyze resume. Please check your API key configuration and try again.");
       setIsAnalyzing(false);
       setAnalysisProgress(0);
     }
@@ -257,34 +260,10 @@ export const ResumeUpload = ({ onAnalysisComplete, isAnalyzing, setIsAnalyzing }
         </div>
       </div>
 
-      {/* API Key Input */}
-      <div className="space-y-2">
-        <Label htmlFor="apiKey">Gemini API Key</Label>
-        <Input
-          id="apiKey"
-          type="password"
-          placeholder="Enter your Gemini API key"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          className="w-full"
-        />
-        <p className="text-xs text-slate-500">
-          Your API key is used securely and not stored. Get one at{" "}
-          <a 
-            href="https://makersuite.google.com/app/apikey" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:underline"
-          >
-            Google AI Studio
-          </a>
-        </p>
-      </div>
-
       {/* Analyze Button */}
       <Button 
         onClick={analyzeResume}
-        disabled={!uploadedFile || !apiKey.trim()}
+        disabled={!uploadedFile}
         className="w-full"
         size="lg"
       >
